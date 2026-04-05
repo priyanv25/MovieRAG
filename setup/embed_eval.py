@@ -684,15 +684,15 @@ def evaluate_model(conn, table: str, client, model_cfg: dict,
 
 def main():
     parser = argparse.ArgumentParser(description="Movie RAG — Embedding Evaluation")
-    parser.add_argument("--corpus", default="movies_corpus.json")
-    parser.add_argument("--output", default="eval_results.json")
-    parser.add_argument("--qa-cache", default="test_dataset.json")
+    parser.add_argument("--corpus", default="data/movies_corpus.json")
+    parser.add_argument("--output", default="data/eval_results.json")
+    parser.add_argument("--qa-cache", default="data/test_dataset.json")
     parser.add_argument("--top-k", type=int, default=TOP_K)
     parser.add_argument("--qa-movies", type=int, default=50)
     parser.add_argument("--skip-embed", action="store_true")
     parser.add_argument("--skip-qa", action="store_true")
     parser.add_argument("--pg-dsn", default="postgresql://postgres:postgres@localhost:5432/postgres")
-    parser.add_argument("--chunks-cache", default="chunks_cache.json")
+    parser.add_argument("--chunks-cache", default="data/chunks_cache.json")
     parser.add_argument("--full-rebuild", action="store_true",
                         help="Ignore caches and redo everything from scratch")
     args = parser.parse_args()

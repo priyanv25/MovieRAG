@@ -24,8 +24,8 @@ def main():
     parser.add_argument("--misses-only", action="store_true")
     parser.add_argument("--top-k", type=int, default=3)
     parser.add_argument("--pg-dsn", default="postgresql://postgres:postgres@localhost:5433/postgres")
-    parser.add_argument("--qa-cache", default="test_dataset.json")
-    parser.add_argument("--chunks-cache", default="chunks_cache.json")
+    parser.add_argument("--qa-cache", default="data/test_dataset.json")
+    parser.add_argument("--chunks-cache", default="data/chunks_cache.json")
     args = parser.parse_args()
 
     import psycopg2

@@ -1,166 +1,164 @@
 # MovieRAG
 
-Retrieval-Augmented Generation pipeline for movies. Semantic search over plots, metadata, Wikipedia articles, and timestamped subtitle dialogue.
+Semantic search engine for movies. Search using natural language across plots, metadata (cast, director, year), Wikipedia articles, and timestamped subtitle dialogue.
 
-## Pipeline Overview
-
-```
-movies.csv → [NB1] Data Collection → movies_corpus.json
-                                          ↓
-                                    [NB2] Chunk + Embed + Evaluate
-                                          ↓
-                                    [NB3] Search Pipeline (search.py)
-```
-
-### NB1 — Data Collection (`data_collection.py`)
-
-Scrapes Wikipedia (metadata, plot, full article) and subdl.com (timestamped subtitles) for each movie in `movies.csv`. Outputs a structured JSON corpus.
-
-- **Input**: `movies.csv` — swap this file to change the corpus without touching code
-- **Output**: `movies_corpus.json`
-- **Sources**: MediaWiki API, subdl.com REST API
+## Quick Start
 
 ```bash
-pip install wikipedia-api requests beautifulsoup4 tqdm
+# Prerequisites
+docker start pgvector_movierag   # or create: see Setup below
+pip install openai psycopg2-binary tqdm numpy
+export OPENROUTER_API_KEY="sk-or-v1-..."
 
-# Full collection (wiki + subtitles)
-python data_collection.py
-
-# Custom movie list
-python data_collection.py --movies my_list.csv
-
-# Wiki only, no subtitles
-python data_collection.py --no-subs
+# Search
+python search.py -q "which movie has a talking teddy bear?"
+python search.py                    # interactive mode
 ```
 
-### NB2 — Embed & Evaluate (`eval_embed.py`)
+## How It Works
 
-Chunks the corpus using a recursive character splitter (sentence-aware, 750 chars, 50 overlap), embeds with multiple models via OpenRouter, stores in pgvector, and evaluates retrieval quality with synthetic QA.
+```
+data/movies.csv
+      |
+      v
+[1. Collect Data]  ──>  data/movies_corpus.json
+      |                  (wiki + subtitles per movie)
+      v
+[2. Chunk + Embed + Evaluate]  ──>  pgvector DB + data/eval_results.json
+      |                              (embeddings + retrieval metrics)
+      v
+[3. Search]  ──>  query → embed → cosine similarity → ranked results + citations
+```
 
 **Chunking strategy:**
 | Source | Method |
 |---|---|
-| Plot | RecursiveCharacterTextSplitter (750 chars, 50 overlap) |
-| Article | RecursiveCharacterTextSplitter (750 chars, 50 overlap) |
+| Plot | Recursive character split (750 chars, 50 overlap) |
+| Article | Recursive character split (750 chars, 50 overlap) |
 | Metadata | Single structured chunk per movie (director, cast, year, etc.) |
-| Subtitles | Time-windowed dialogue chunks (2-min windows) |
+| Subtitles | Time-windowed dialogue (2-min windows) |
 
-**QA generation:**
-- 2 questions per movie (1 dialogue-based, 1 factual)
-- Alternates between two LLMs for diversity (qwen/qwen3.5-9b, mistralai/mistral-small-creative)
-- Source-aware prompts: subtitle chunks get dialogue-specific questions
+**Embedding model selection** — evaluated 3 models on 100 synthetic QA pairs (2 per movie, alternating LLMs for diversity):
 
-**Evaluation metrics** (following MTEB methodology):
-- **Hit Rate @k** — did the correct chunk appear anywhere in top-k?
-- **MRR @k** — how high does the correct chunk rank?
-- **nDCG @k** — overall ranking quality (MTEB standard)
-
-**Our results (100 queries, @5):**
-
-| Model | Hit Rate | MRR | nDCG | $/M tokens |
+| Model | Hit Rate @5 | MRR | nDCG | $/M tokens |
 |---|---|---|---|---|
 | **pplx_0_6b** | **0.8800** | **0.7023** | **0.7475** | $0.004 |
 | qwen_4b | 0.8400 | 0.6703 | 0.7130 | $0.020 |
 | openai_small | 0.8000 | 0.6250 | 0.6700 | $0.020 |
 
-**Incremental processing** — re-runs only process new data:
-- Chunks cached in `chunks_cache.json`
-- Embeddings persisted in pgvector (skips existing IDs)
-- QA pairs cached in `test_dataset.json`
-- Results appended to `eval_results.json` with run history
+We use pplx_0_6b — best metrics, cheapest. Swap via `--model` flag.
+
+## Setup
 
 ```bash
-# Prerequisites
+# 1. pgvector (vector database)
 docker run -d --name pgvector_movierag -e POSTGRES_PASSWORD=postgres \
     -p 5433:5432 pgvector/pgvector:pg16
 
-pip install openai psycopg2-binary tqdm numpy
+# 2. Python deps
+pip install openai psycopg2-binary tqdm numpy wikipedia-api requests beautifulsoup4
 
+# 3. API key
 export OPENROUTER_API_KEY="sk-or-v1-..."
 
-# Full run
-python eval_embed.py --pg-dsn "postgresql://postgres:postgres@localhost:5433/postgres"
-
-# Incremental (after adding movies to corpus)
-python eval_embed.py --pg-dsn "postgresql://postgres:postgres@localhost:5433/postgres"
-
-# Skip steps
-python eval_embed.py --skip-qa          # reuse QA pairs
-python eval_embed.py --skip-embed       # reuse embeddings
-python eval_embed.py --full-rebuild     # ignore all caches
+# 4. Build the pipeline (one-time)
+python setup/collect_data.py                    # scrape data
+python setup/embed_eval.py                      # chunk + embed + evaluate
 ```
 
-### NB3 — Search Pipeline (`search.py`)
+## Usage
 
-Semantic search engine over the movie corpus. Takes a natural language query, embeds it, retrieves similar chunks from pgvector, and returns results with citations.
+### Search (`search.py`)
 
-Uses pplx_0_6b by default based on our evaluation — swap via `--model` flag.
+The main pipeline. Takes a query, embeds it, retrieves similar chunks from pgvector, returns results with citations.
 
 ```bash
-# Single query
-python search.py -q "which movie has a talking teddy bear?"
-
-# Interactive mode
-python search.py
-
-# Different model / more results
-python search.py --model qwen_4b --top-k 10 -q "funny wedding scenes"
+python search.py -q "who is Ben's love interest in The Intern?"
+python search.py -q "funny wedding scenes" --top-k 10
+python search.py --model qwen_4b -q "bachelor party movie"
+python search.py                                # interactive mode
 ```
 
-### Utilities
+### Inspect Results (`show_results.py`)
 
-**`show_results.py`** — Inspect retrieval quality with side-by-side expected vs retrieved chunks.
+Side-by-side view of expected vs retrieved chunks for QA pairs.
 
 ```bash
-python show_results.py                      # 5 random examples
-python show_results.py --n 10              # more examples
-python show_results.py --misses-only       # only failures
-python show_results.py --model qwen_4b     # test different model
-python show_results.py --all               # all queries
+python show_results.py                          # 5 random examples
+python show_results.py --n 10                   # more examples
+python show_results.py --misses-only            # only failures
+python show_results.py --hits-only              # only successes
+python show_results.py --model qwen_4b          # different model
+python show_results.py --all                    # all 100 queries
 ```
 
-**`model_selection.py`** — Filters MTEB leaderboard for candidate embedding models (200-600M params, open-weight).
+### Data Collection (`setup/collect_data.py`)
+
+Scrapes Wikipedia (metadata, plot, full article) and subdl.com (timestamped subtitles).
+
+```bash
+python setup/collect_data.py                             # full run
+python setup/collect_data.py --movies data/my_list.csv   # custom movie list
+python setup/collect_data.py --no-subs                   # wiki only
+```
+
+### Embed & Evaluate (`setup/embed_eval.py`)
+
+Chunks corpus, embeds with multiple models, evaluates retrieval quality. Incremental — only processes new movies on re-run.
+
+```bash
+python setup/embed_eval.py                      # full run (or incremental)
+python setup/embed_eval.py --skip-qa            # reuse QA pairs
+python setup/embed_eval.py --skip-embed         # reuse embeddings
+python setup/embed_eval.py --full-rebuild       # ignore all caches
+```
+
+### Model Selection (`setup/select_model.py`)
+
+Filters the MTEB leaderboard for candidate embedding models.
 
 ```bash
 pip install mteb
-python model_selection.py
+python setup/select_model.py
 ```
 
 ## Swapping Components
 
-| Component | How to swap |
+| What | How |
 |---|---|
-| **Movies** | Edit `movies.csv`, re-run `data_collection.py` |
-| **Embedding model** | Add entry to `EMBEDDING_MODELS` dict in `eval_embed.py`, re-run |
-| **QA generation LLMs** | Edit `QA_LLMS` list in `eval_embed.py` |
-| **Chunk size** | Change `CHUNK_SIZE` / `CHUNK_OVERLAP` in `eval_embed.py` |
-| **Subtitle window** | Change `SUBTITLE_WINDOW_SEC` in `eval_embed.py` |
-| **Vector DB** | Replace pgvector calls in `eval_embed.py` and `search.py` |
-| **API provider** | Change `base_url` in OpenAI client (any OpenAI-compatible API works) |
+| **Movies** | Edit `data/movies.csv`, re-run `setup/collect_data.py` then `setup/embed_eval.py` |
+| **Embedding model** | Add to `EMBEDDING_MODELS` in `setup/embed_eval.py`, re-run, then use `--model` in `search.py` |
+| **QA generation LLMs** | Edit `QA_LLMS` list in `setup/embed_eval.py` |
+| **Chunk size / overlap** | Change `CHUNK_SIZE` / `CHUNK_OVERLAP` in `setup/embed_eval.py` |
+| **Subtitle window** | Change `SUBTITLE_WINDOW_SEC` in `setup/embed_eval.py` |
+| **Vector DB** | Replace pgvector calls in `setup/embed_eval.py` and `search.py` |
+| **API provider** | Change `base_url` in OpenAI client (any OpenAI-compatible endpoint works) |
 
 ## TODO
 
-- [ ] **BM25 + RRF hybrid search** — combine keyword (BM25) and vector retrieval with Reciprocal Rank Fusion for better recall on exact names, quotes, and metadata queries
-- [ ] **Embedding fine-tuning** — use train/test split (already in code) to fine-tune embedding models on movie domain data
-- [ ] **LLM answer generation** — add an LLM layer on top of retrieval to synthesize natural language answers from retrieved chunks
-- [ ] **Re-ranking** — add a cross-encoder re-ranker stage between retrieval and output
-- [ ] **Evaluation on more genres** — extend beyond comedy to test generalization
-- [ ] **Streaming / API wrapper** — wrap search.py in a FastAPI server for production use
+- [ ] BM25 + Reciprocal Rank Fusion — hybrid keyword + vector retrieval for better recall on exact names and quotes
+- [ ] Embedding fine-tuning — train/test split already in code, extend for domain-specific tuning
+- [ ] LLM answer generation — synthesize natural language answers from retrieved chunks
+- [ ] Cross-encoder re-ranking — second-stage re-ranker between retrieval and output
+- [ ] More genres — extend beyond comedy
+- [ ] FastAPI wrapper — production API server around search.py
 
 ## Project Structure
 
 ```
 movierag/
-├── movies.csv              # Input: movie list (title, wiki_title, year)
-├── data_collection.py      # NB1: scrape Wikipedia + subtitles
-├── movies_corpus.json      # Output of NB1
-├── model_selection.py      # MTEB model filtering utility
-├── eval_embed.py           # NB2: chunk, embed, evaluate
-├── chunks_cache.json       # Cached chunks (incremental)
-├── test_dataset.json       # Cached QA pairs
-├── eval_results.json       # Evaluation results with run history
-├── search.py               # NB3: semantic search pipeline
-├── show_results.py         # Retrieval quality inspector
-├── .env                    # API keys (not committed)
+├── search.py                   # Main: semantic search with citations
+├── show_results.py             # Retrieval quality inspector
+├── setup/                      # One-time build scripts
+│   ├── collect_data.py         # NB1: scrape Wikipedia + subtitles
+│   ├── embed_eval.py           # NB2: chunk, embed, evaluate models
+│   └── select_model.py         # MTEB model filtering
+├── data/                       # Corpus + cached artifacts
+│   ├── movies.csv              # Input movie list
+│   ├── movies_corpus.json      # Scraped corpus
+│   ├── chunks_cache.json       # Cached chunks (incremental)
+│   ├── test_dataset.json       # Synthetic QA pairs
+│   └── eval_results.json       # Evaluation results + run history
+├── .env                        # API keys (git-ignored)
 └── .gitignore
 ```
