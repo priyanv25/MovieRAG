@@ -140,8 +140,9 @@ python setup/select_model.py
 - [ ] Embedding fine-tuning — train/test split already in code, extend for domain-specific tuning
 - [ ] LLM answer generation — synthesize natural language answers from retrieved chunks
 - [ ] Cross-encoder re-ranking — second-stage re-ranker between retrieval and output
-- [ ] More genres — extend beyond comedy
+- [ ] More genres — extend beyond comedy, make the data more comprehensive.
 - [ ] FastAPI wrapper — production API server around search.py
+- [ ] Extend to TV series.
 
 ## Project Structure
 
