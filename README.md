@@ -1,6 +1,6 @@
 # MovieRAG
 
-Retrieval-Augmented Generation pipeline for comedy movies. Semantic search over plots, metadata, Wikipedia articles, and timestamped subtitle dialogue.
+Retrieval-Augmented Generation pipeline for movies. Semantic search over plots, metadata, Wikipedia articles, and timestamped subtitle dialogue.
 
 ## Pipeline Overview
 
