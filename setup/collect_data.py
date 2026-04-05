@@ -393,7 +393,7 @@ def summarize(corpus: list[dict]) -> None:
         log.warning("  sparse data (check wiki_title): %s", sparse)
 
 
-def save(corpus: list[dict], path: str = "movies_corpus.json") -> None:
+def save(corpus: list[dict], path: str = "data/movies_corpus.json") -> None:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(corpus, f, indent=2, ensure_ascii=False)
     mb = os.path.getsize(path) / 1_048_576
@@ -406,8 +406,8 @@ def save(corpus: list[dict], path: str = "movies_corpus.json") -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Collect movie data for RAG evaluation")
-    parser.add_argument("--movies", default="movies.csv", help="Path to movie list CSV")
-    parser.add_argument("--output", default="movies_corpus.json", help="Output JSON path")
+    parser.add_argument("--movies", default="data/movies.csv", help="Path to movie list CSV")
+    parser.add_argument("--output", default="data/movies_corpus.json", help="Output JSON path")
     parser.add_argument("--no-subs", action="store_true", help="Skip subtitle download")
     parser.add_argument("--rate-limit", type=float, default=0.5, help="Seconds between wiki requests")
     args = parser.parse_args()
