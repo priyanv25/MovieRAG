@@ -113,14 +113,6 @@ python setup/embed_eval.py --skip-embed         # reuse embeddings
 python setup/embed_eval.py --full-rebuild       # ignore all caches
 ```
 
-### Model Selection (`setup/select_model.py`)
-
-Filters the MTEB leaderboard for candidate embedding models.
-
-```bash
-pip install mteb
-python setup/select_model.py
-```
 
 ## Swapping Components
 
@@ -139,7 +131,6 @@ python setup/select_model.py
 - [ ] BM25 + Reciprocal Rank Fusion — hybrid keyword + vector retrieval for better recall on exact names and quotes
 - [ ] Embedding fine-tuning — train/test split already in code, extend for domain-specific tuning
 - [ ] LLM answer generation — synthesize natural language answers from retrieved chunks
-- [ ] Cross-encoder re-ranking — second-stage re-ranker between retrieval and output
 - [ ] More genres — extend beyond comedy, make the data more comprehensive.
 - [ ] FastAPI wrapper — production API server around search.py
 - [ ] Extend to TV series.
