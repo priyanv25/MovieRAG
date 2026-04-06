@@ -1,0 +1,158 @@
+{
+  "best_model": "pplx_0_6b",
+  "top_k": 5,
+  "models": {
+    "pplx_0_6b": {
+      "config": {
+        "id": "perplexity/pplx-embed-v1-0.6b",
+        "dims": 1024,
+        "needs_instruction": false
+      },
+      "hit_rate": 0.88,
+      "mrr": 0.7023333333333334,
+      "ndcg": 0.7475365380204502,
+      "n_queries": 100
+    },
+    "qwen_4b": {
+      "config": {
+        "id": "qwen/qwen3-embedding-4b",
+        "dims": 1024,
+        "needs_instruction": true,
+        "query_prefix": "Instruct: Given a movie search query, retrieve relevant passages about movies\nQuery: "
+      },
+      "hit_rate": 0.84,
+      "mrr": 0.6703333333333333,
+      "ndcg": 0.7129621157539354,
+      "n_queries": 100
+    },
+    "openai_small": {
+      "config": {
+        "id": "openai/text-embedding-3-small",
+        "dims": 1536,
+        "needs_instruction": false
+      },
+      "hit_rate": 0.8,
+      "mrr": 0.625,
+      "ndcg": 0.6700366720186176,
+      "n_queries": 100
+    }
+  },
+  "corpus_stats": {
+    "n_movies": 100,
+    "n_chunks": 6772,
+    "chunks_by_source": {
+      "metadata": 100,
+      "plot": 649,
+      "article": 1881,
+      "subtitles": 4142
+    },
+    "n_qa_movies": 50,
+    "n_qa_docs": 3711
+  },
+  "runs": [
+    {
+      "best_model": "pplx_0_6b",
+      "top_k": 5,
+      "models": {
+        "pplx_0_6b": {
+          "config": {
+            "id": "perplexity/pplx-embed-v1-0.6b",
+            "dims": 1024,
+            "needs_instruction": false
+          },
+          "hit_rate": 0.8958333333333334,
+          "mrr": 0.6506944444444445,
+          "ndcg": 0.7124687217331584,
+          "n_queries": 48
+        },
+        "qwen_4b": {
+          "config": {
+            "id": "qwen/qwen3-embedding-4b",
+            "dims": 1024,
+            "needs_instruction": true,
+            "query_prefix": "Instruct: Given a movie search query, retrieve relevant passages about movies\nQuery: "
+          },
+          "hit_rate": 0.8541666666666666,
+          "mrr": 0.6020833333333333,
+          "ndcg": 0.665346648667681,
+          "n_queries": 48
+        },
+        "openai_small": {
+          "config": {
+            "id": "openai/text-embedding-3-small",
+            "dims": 1536,
+            "needs_instruction": false
+          },
+          "hit_rate": 0.8541666666666666,
+          "mrr": 0.5961805555555556,
+          "ndcg": 0.6614591567565045,
+          "n_queries": 48
+        }
+      },
+      "corpus_stats": {
+        "n_movies": 100,
+        "n_chunks": 6772,
+        "chunks_by_source": {
+          "metadata": 100,
+          "plot": 649,
+          "article": 1881,
+          "subtitles": 4142
+        },
+        "n_qa_movies": 50,
+        "n_qa_docs": 3351
+      }
+    },
+    {
+      "best_model": "pplx_0_6b",
+      "top_k": 5,
+      "models": {
+        "pplx_0_6b": {
+          "config": {
+            "id": "perplexity/pplx-embed-v1-0.6b",
+            "dims": 1024,
+            "needs_instruction": false
+          },
+          "hit_rate": 0.88,
+          "mrr": 0.7023333333333334,
+          "ndcg": 0.7475365380204502,
+          "n_queries": 100
+        },
+        "qwen_4b": {
+          "config": {
+            "id": "qwen/qwen3-embedding-4b",
+            "dims": 1024,
+            "needs_instruction": true,
+            "query_prefix": "Instruct: Given a movie search query, retrieve relevant passages about movies\nQuery: "
+          },
+          "hit_rate": 0.84,
+          "mrr": 0.6703333333333333,
+          "ndcg": 0.7129621157539354,
+          "n_queries": 100
+        },
+        "openai_small": {
+          "config": {
+            "id": "openai/text-embedding-3-small",
+            "dims": 1536,
+            "needs_instruction": false
+          },
+          "hit_rate": 0.8,
+          "mrr": 0.625,
+          "ndcg": 0.6700366720186176,
+          "n_queries": 100
+        }
+      },
+      "corpus_stats": {
+        "n_movies": 100,
+        "n_chunks": 6772,
+        "chunks_by_source": {
+          "metadata": 100,
+          "plot": 649,
+          "article": 1881,
+          "subtitles": 4142
+        },
+        "n_qa_movies": 50,
+        "n_qa_docs": 3711
+      }
+    }
+  ]
+}
