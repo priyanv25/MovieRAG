@@ -126,22 +126,32 @@ def format_result(result, rank):
     )
 
 
+def deduplicate_by_movie(results, top_k):
+    """Keep only the best-scoring chunk per movie."""
+    seen = {}
+    for r in results:
+        title = r["movie_title"]
+        if title not in seen:
+            seen[title] = r
+    return list(seen.values())[:top_k]
+
+
 def run_query(client, conn, model_cfg, table, query, top_k):
     """Run a single query and print results."""
     q_emb = embed_query(client, model_cfg["id"], query, model_cfg["dims"])
-    results = search(conn, table, q_emb, top_k=top_k)
+    # Fetch extra results so we have enough after dedup
+    raw_results = search(conn, table, q_emb, top_k=top_k * 3)
 
-    if not results:
+    if not raw_results:
         print("  No results found.\n")
         return
 
-    # Group by movie to show diversity
-    seen_movies = set()
+    results = deduplicate_by_movie(raw_results, top_k)
+
     for i, r in enumerate(results):
-        seen_movies.add(r["movie_title"])
         print(format_result(r, i + 1))
 
-    print(f"  ── {len(results)} results from {len(seen_movies)} movies ──\n")
+    print(f"  ── {len(results)} movies ──\n")
 
 
 def main():
