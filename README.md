@@ -163,7 +163,7 @@ movierag/
 ├── .env                        # API keys (git-ignored)
 └── .gitignore
 ```
-+                                                                                       
-  ##Credits                                                                            
+                                                                                    
+  ## Credits                                                                            
 
   Embedding evaluation methodology adapted from [donbr's embedding fine-tuning walkthrough](https://gist.github.com/donbr/696569a74bf7dbe90813177807ce1064).   
